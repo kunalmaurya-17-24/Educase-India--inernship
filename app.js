@@ -32,6 +32,12 @@ app.get('/schools', async (req, res) => {
 // Route example: Add a new school
 app.post('/schools', async (req, res) => {
     const { name, latitude, longitude, address } = req.body;
+
+    // Check if all required fields are provided
+    if (!name || !latitude || !longitude || !address) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
     try {
         const [result] = await promisePool.query(
             'INSERT INTO schools (name, latitude, longitude, address) VALUES (?, ?, ?, ?)',
@@ -44,14 +50,19 @@ app.post('/schools', async (req, res) => {
     }
 });
 
+
 // Route example: Get schools within a certain distance
 app.get('/schools/nearby', async (req, res) => {
     const { latitude, longitude, distance } = req.query;
 
+    if (!latitude || !longitude || !distance) {
+        return res.status(400).json({ error: 'Missing required query parameters' });
+    }
+
     try {
         const query = `
             SELECT *, 
-                ( 3959 * acos( cos( radians(?) ) * cos( radians( latitude ) ) * cos( radians( longitude ) - radians(?) ) + sin( radians(?) ) * sin( radians( latitude ) ) ) AS distance
+                ( 3959 * acos( cos( radians(?) ) * cos( radians( latitude ) ) * cos( radians( longitude ) - radians(?) ) + sin( radians(?) ) * sin( radians( latitude ) ) ) ) AS distance
             FROM schools
             HAVING distance < ?
             ORDER BY distance
